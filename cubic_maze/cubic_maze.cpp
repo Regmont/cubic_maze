@@ -7,163 +7,139 @@ bool GameOver = false;
 
 enum Move { LEFT = 97, RIGHT = 100, UP = 119, DOWN = 115, TP_UP = 113, TP_DOWN = 101 };
 
-void Recogn_Input(Move& player)
+int main();		//прототип main для перезапуска игры
+
+void Recogn_Input(Move& selection);
+
+void Print_Main_Screen(char elem_1, char elem_2);
+void Print_End_Screen(char elem_1, char elem_2);
+void Print_Wall(int matr[matr_size][matr_size], int x, int y);
+void Print_Level(int matr[matr_size][matr_size], int x, int y, int z);
+void Tutorial();
+
+//main part
+void Main_Screen()
 {
-	if (player < 90)                    //Если введена заглавная английская буква, её регистр меняется на прописную
-		player = Move(player + 32);
+	Move selection = Move(0);
 
-	if (player == 130 || player == 162) //Введено 'Ф' или 'ф'
-		player = RIGHT;
+	int choice = 1;
+	char elem_1;
+	char elem_2;
 
-	if (player == 148 || player == 228) //Введено 'В' или 'в'
-		player = LEFT;
+	Print_Main_Screen(char(254), ' ');
 
-	if (player == 150 || player == 230) //Введено 'Ц' или 'ц'
-		player = UP;
-
-	if (player == 155 || player == 235) //Введено 'Ы' или 'ы'
-		player = DOWN;
-
-	if (player == 137 || player == 169) //Введено 'Й' или 'й'
-		player = TP_UP;
-
-	if (player == 147 || player == 227) //Введено 'У' или 'у'
-		player = TP_DOWN;
-}
-
-void Print_Wall(int matr[matr_size][matr_size], int y, int x)
-{
-	int L = matr[x][y - 1];
-	int R = matr[x][y + 1];
-	int U = matr[x - 1][y];
-	int D = matr[x + 1][y];
-	int max_el = matr_size - 1;
-
-	if (x == 0 || y == 0 || x == max_el || y == max_el)
+	while (_kbhit && selection != 13)
 	{
-		if (x == 0 && y == 0)
-			cout << char(201);
-		else if (x == 0 && y == max_el)
-			cout << char(187);
-		else if (x == max_el && y == 0)
-			cout << char(200);
-		else if (x == max_el && y == max_el)
-			cout << char(188);
-		else if (x == 0)
+		selection = (Move)_getch();
+
+		if (selection != 13)
+			Recogn_Input(selection);
+		else
+			break;
+
+		switch (selection)
 		{
-			if (D != 1)
-				cout << char(205);
-			else
-				cout << char(203);
+			case UP:
+			{
+				choice == 1 ? choice = 2 : choice = 1;
+				break;
+			}
+			case DOWN:
+			{
+				choice == 2 ? choice = 1 : choice = 2;
+				break;
+			}
 		}
-		else if (x == max_el)
+
+		if (choice == 1)
 		{
-			if (U != 1)
-				cout << char(205);
-			else
-				cout << char(202);
-		}
-		else if (y == 0)
-		{
-			if (R != 1)
-				cout << char(186);
-			else
-				cout << char(204);
+			elem_1 = 254;
+			elem_2 = ' ';
 		}
 		else
 		{
-			if (L != 1)
-				cout << char(186);
-			else
-				cout << char(185);
+			elem_1 = ' ';
+			elem_2 = 254;
 		}
+
+		system("cls");
+		Print_Main_Screen(elem_1, elem_2);
 	}
-	else
+
+	system("cls");
+
+	if (choice == 2)
 	{
-		if (L != 1 && R == 1 && U != 1 && D == 1)
-			cout << char(201);
-		else if (L == 1 && R != 1 && U != 1 && D == 1)
-			cout << char(187);
-		else if (L == 1 && R != 1 && U == 1 && D != 1)
-			cout << char(188);
-		else if (L != 1 && R == 1 && U == 1 && D != 1)
-			cout << char(200);
-		else if (L != 1 && R != 1 && U == 1 && D == 1)
-			cout << char(186);
-		else if (L == 1 && R == 1 && U != 1 && D != 1)
-			cout << char(205);
-		else if (L != 1 && R == 1 && U == 1 && D == 1)
-			cout << char(204);
-		else if (L == 1 && R != 1 && U == 1 && D == 1)
-			cout << char(185);
-		else if (L == 1 && R == 1 && U != 1 && D == 1)
-			cout << char(203);
-		else if (L == 1 && R == 1 && U == 1 && D != 1)
-			cout << char(202);
-		else if (L == 1 && R == 1 && U == 1 && D == 1)
-			cout << char(206);
-		else if (L == 1 && R != 1 && U != 1 && D != 1)
-			cout << char(184);
-		else if (L != 1 && R == 1 && U != 1 && D != 1)
-			cout << char(213);
-		else if (L != 1 && R != 1 && U != 1 && D == 1)
-			cout << char(214);
-		else if (L != 1 && R != 1 && U == 1 && D != 1)
-			cout << char(211);
-		else
-			cout << char(197);
+		Tutorial();
+		Main_Screen();
 	}
 }
 
-void Print_Level(int matr[matr_size][matr_size], int x, int y, int z)
+void End_Screen()
 {
-	for (int i = 0; i < matr_size; i++)
-	{
-		for (int j = 0; j < matr_size; j++)
-			if (i == y && j == x)
-				cout << char(2);	//игрок
-			else
-				switch (matr[i][j])
-				{
-					case 0:
-					{
-						cout << ' ';	//пустое пространство
-						break;
-					}
-					case 1:
-					{
-						Print_Wall(matr, j, i);	//стена
-						break;
-					}
-					case 2:
-					{
-						cout << char(253);	//телепорт вверх
-						break;
-					}
-					case 3:
-					{
-						cout << char(15);	//телепорт вниз
-						break;
-					}
-					default:
-					{
-						cout << '?';
-						break;
-					}
-				}
+	system("cls");
 
-		cout << endl;
+	Move selection = Move(0);
+
+	int choice = 1;
+	char elem_1;
+	char elem_2;
+
+	Print_End_Screen(char(254), ' ');
+
+	while (_kbhit && selection != 13)
+	{
+		selection = (Move)_getch();
+
+		if (selection != 13)
+			Recogn_Input(selection);
+		else
+			break;
+
+		switch (selection)
+		{
+			case LEFT:
+			{
+				choice == 1 ? choice = 2 : choice = 1;
+				break;
+			}
+			case RIGHT:
+			{
+				choice == 2 ? choice = 1 : choice = 2;
+				break;
+			}
+		}
+
+		if (choice == 1)
+		{
+			elem_1 = 254;
+			elem_2 = ' ';
+		}
+		else
+		{
+			elem_1 = ' ';
+			elem_2 = 254;
+		}
+
+		system("cls");
+		Print_End_Screen(elem_1, elem_2);
+	}
+
+	system("cls");
+
+	if (choice == 1)
+	{
+		GameOver = false;
+		main();
 	}
 }
 
 void Logic(int matr[matr_size][matr_size], int& x, int& y, int& z, Move player)
 {
-	while (_kbhit)
+	while (_kbhit && !GameOver)
 	{
 		player = (Move)_getch();    //Считывание нажатой клавиши
 		Recogn_Input(player);
-
-		//		cout << player << ' ';
 
 		switch (player)
 		{
@@ -209,11 +185,15 @@ void Logic(int matr[matr_size][matr_size], int& x, int& y, int& z, Move player)
 
 				break;
 			}
+			default:	//временно для проверки
+			{
+				GameOver = true;
+				break;
+			}
 		}
 
 		system("cls");
 		Print_Level(matr, x, y, z);
-		//		cout << "x = " << x << " y = " << y << " z = " << z << endl;
 	}
 }
 
@@ -239,11 +219,247 @@ int main()
 
 	int x = 9, y = 8, z = 0;   //правый нижний угол над цифрой 3
 
-	/*for (int i = 0; i < 256; i++)
-		cout << char(i) << " " << i << endl;*/
+	Main_Screen();
 
 	Print_Level(matr, x, y, z);
-	
-	while (!GameOver)
-		Logic(matr, x, y, z, player);
+	Logic(matr, x, y, z, player);
+
+	End_Screen();
+}
+
+//input
+void Recogn_Input(Move& selection)
+{
+	switch (selection)
+	{
+		case 68:	//Введено 'A' или 'Ф' или 'ф'
+		case 130:
+		case 162:
+		{
+			selection = RIGHT;
+			break;
+		}
+		case 65:	//Введено 'В' или 'В' или 'в'
+		case 148:
+		case 228:
+		{
+			selection = LEFT;
+			break;
+		}
+		case 87:	//Введено 'W' или 'Ц' или 'ц'
+		case 150:
+		case 230:
+		{
+			selection = UP;
+			break;
+		}
+		case 83:	//Введено 'S' или 'Ы' или 'ы'
+		case 155:
+		case 235:
+		{
+			selection = DOWN;
+			break;
+		}
+		case 81:	//Введено 'Q' или 'Й' или 'й'
+		case 137:
+		case 169:
+		{
+			selection = TP_UP;
+			break;
+		}
+		case 69:	//Введено 'E' или 'У' или 'у'
+		case 147:
+		case 227:
+		{
+			selection = TP_DOWN;
+			break;
+		}
+	}
+}
+
+//output
+void Print_Wall(int matr[matr_size][matr_size], int x, int y)
+{
+	int L = matr[y][x - 1];
+	int R = matr[y][x + 1];
+	int U = matr[y - 1][x];
+	int D = matr[y + 1][x];
+	int max_el = matr_size - 1;
+
+	//является ли внешней стеной
+	if (x == 0 || y == 0 || x == max_el || y == max_el)
+	{
+		if (x == 0 && y == 0)
+			cout << char(201);								//угол право-низ
+		else if (x == 0 && y == max_el)
+			cout << char(200);								//право-верх
+		else if (x == max_el && y == 0)
+			cout << char(187);								//угол лево-низ
+		else if (x == max_el && y == max_el)
+			cout << char(188);								//угол лево-верх
+		else if (y == 0)
+			D != 1 ? cout << char(205) : cout << char(203);	// " = " или тройник лево-право-низ
+		else if (y == max_el)
+			U != 1 ? cout << char(205) : cout << char(202);	// " = " или тройник лево-право-верх
+		else if (x == 0)
+			R != 1 ? cout << char(186) : cout << char(204);	// " || " или тройник право-верх-низ
+		else
+			L != 1 ? cout << char(186) : cout << char(185);	// " || " или тройник лево-верх-низ
+	}
+	else
+	{
+		if (L == 1 && R == 1 && U == 1 && D == 1)
+			cout << char(206);									//крест
+		else if (R == 1 && U != 1 && D == 1)
+			L != 1 ? cout << char(201) : cout << char(203);	//угол право-низ + тройник (лево)
+		else if (L != 1 && R == 1 && U == 1)
+			D != 1 ? cout << char(200) : cout << char(204);		//угол право-верх + тройник (низ)
+		else if (L == 1 && R != 1 && D == 1)
+			U != 1 ? cout << char(187) : cout << char(185);		//угол лево-низ + тройник (верх)
+		else if (L == 1 && R != 1 && U == 1)
+			D != 1 ? cout << char(188) : cout << char(185);		//угол лево-верх (низ)
+		else if (U != 1 && D != 1)
+			cout << char(205);									// " = "
+		else if (L != 1 && R != 1)
+			cout << char(186);									// " || "
+		else
+			cout << char(197);									//доп. элемент
+	}
+}
+
+void Print_Level(int matr[matr_size][matr_size], int x, int y, int z)
+{
+	for (int i = 0; i < matr_size; i++)
+	{
+		for (int j = 0; j < matr_size; j++)
+			if (i == y && j == x)
+				cout << char(2);	//игрок
+			else
+				switch (matr[i][j])
+				{
+					case 0:
+					{
+						cout << ' ';	//пустое пространство
+						break;
+					}
+					case 1:
+					{
+						Print_Wall(matr, j, i);	//стена
+						break;
+					}
+					case 2:
+					{
+						cout << char(253);	//телепорт вверх
+						break;
+					}
+					case 3:
+					{
+						cout << char(15);	//телепорт вниз
+						break;
+					}
+					default:
+					{
+						cout << '?';		//Неопознанный объект (ошибка)
+						break;
+					}
+				}
+
+		cout << endl;
+	}
+
+	for (int i = 0; i < matr_size / 2 - 3; i++)
+		cout << ' ';
+
+	cout << "level " << z + 1 << endl;
+}
+
+void Print_Main_Screen(char elem_1, char elem_2)
+{
+	cout << "   CUBIC MAZE" << endl << endl;
+
+	cout << "   " << char(201);
+	for (int i = 0; i < 8; i++)
+		cout << char(205);
+	cout << char(187) << endl;
+
+	cout << "  " << elem_1 << char(186) << "  play  " << char(186) << endl;
+
+	cout << "   " << char(200);
+	for (int i = 0; i < 8; i++)
+		cout << char(205);
+	cout << char(188) << endl;
+
+	cout << "   " << char(201);
+	for (int i = 0; i < 8; i++)
+		cout << char(205);
+	cout << char(187) << endl;
+
+	cout << "  " << elem_2 << char(186) << "tutorial" << char(186) << endl;
+
+	cout << "   " << char(200);
+	for (int i = 0; i < 8; i++)
+		cout << char(205);
+	cout << char(188) << endl;
+
+	cout << endl;
+	cout << "use W, S to switch";
+}
+
+void Print_End_Screen(char elem_1, char elem_2)
+{
+	cout << endl << endl << "\tCONGRATULATIONS!" << endl;
+	cout << " You've made it through the maze!" << endl << endl;
+
+	cout << "     " << char(201);
+	for (int i = 0; i < 10; i++)
+		cout << char(205);
+	cout << char(187) << char(201);
+	for (int i = 0; i < 9; i++)
+		cout << char(205);
+	cout << char(187) << endl;
+
+	cout << "     " << char(186) << "play again" << char(186) << char(186) << "quit game" << char(186) << endl;
+
+	cout << "     " << char(200);
+	for (int i = 0; i < 10; i++)
+		cout << char(205);
+	cout << char(188) << char(200);
+	for (int i = 0; i < 9; i++)
+		cout << char(205);
+	cout << char(188) << endl;
+
+	cout << "     ";
+	for (int i = 0; i < 12; i++)
+		cout << elem_1;
+	for (int i = 0; i < 11; i++)
+		cout << elem_2;
+
+	cout << endl << endl;
+	cout << "       use A, D to switch";
+}
+
+void Tutorial()
+{
+	int back = 0;
+
+	cout << char(2) << " - you\n";
+	cout << char(253) << " - portal to the next level\n";
+	cout << char(15) << " - portal to the previous level\n";
+
+	cout << endl;
+
+	cout << "WASD - move\n";
+	cout << "Q - using first portal " << char(253) << endl;
+	cout << "E - using second portal " << char(15) << endl;
+
+	cout << endl << endl;
+
+	cout << "press Enter to go back to main menu" << endl;
+
+	while (_kbhit && back != 13)
+	{
+		back = _getch();
+	}
+
+	system("cls");
 }
