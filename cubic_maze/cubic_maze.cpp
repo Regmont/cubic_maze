@@ -1,6 +1,7 @@
 ﻿#include <iostream>
 #include <conio.h>
 #include "maze_gen.h"
+
 using namespace std;
 
 int matr_size;			//Размер уровня (сторона квадрата)
@@ -16,7 +17,8 @@ int main();		//Для перезапуска игры
 
 void Recogn_Input(Move& selection);
 
-void Print_Diffs(char elem_1, char elem_2, char elem_3);
+void Print_Custom_Dif(int size, int lvls, char elem_1, char elem_2);
+void Print_Diffs(char elem_1, char elem_2, char elem_3, char elem_4);
 void Print_Main_Screen(char elem_1, char elem_2);
 void Print_End_Screen(char elem_1, char elem_2);
 void Print_Wall(int** matr, int x, int y);
@@ -24,19 +26,99 @@ void Print_Level(int** matr, int x, int y);
 void Tutorial();
 
 //Главные функции
+void Custom_Dif()
+{
+	//Функция даёт возможность настроить сложность игры
+
+	Move selection = Move(0);		//Возможность выбора
+	int choice = 1;					//Переключение между строками выбора
+	char elem_1, elem_2;			//Элементы, отображающие, какая строка выбрана
+	int size = 5, lvls = 1;			//Предполагаемые размер уровней и количество уровней
+
+	Print_Custom_Dif(size, lvls, char(254), ' ');	//Вывод настройки сложности
+
+	//Ожидание нажатия Enter
+	while (_kbhit && selection != 13)
+	{
+		selection = (Move)_getch();
+
+		if (selection != 13)
+			Recogn_Input(selection);	//Опознание вводимых данных
+		else
+			break;
+
+		//Перемещение между строками настройки
+		if (selection == UP || selection == DOWN)
+			choice == 1 ? choice = 2 : choice = 1;
+
+		if (choice == 1)
+			switch (selection)
+			{
+				//Перемещение между полями сложностей
+				case LEFT:
+				{
+					size == 5 ? size = 99 : size -= 2;
+					break;
+				}
+				case RIGHT:
+				{
+					size == 99 ? size = 5 : size += 2;
+					break;
+				}
+			}
+		else
+			switch (selection)
+			{
+				//Перемещение между полями сложностей
+				case LEFT:
+				{
+					lvls == 1 ? lvls = 10 : lvls--;
+					break;
+				}
+				case RIGHT:
+				{
+					lvls == 10 ? lvls = 1 : lvls++;
+					break;
+				}
+			}
+
+		//Присвоение показывающим выбранный элемент символам нужные коды для отображения
+		if (choice == 1)
+		{
+			elem_1 = 254;
+			elem_2 = ' ';
+		}
+		else
+		{
+			elem_1 = ' ';
+			elem_2 = 254;
+		}
+
+		system("cls");
+		Print_Custom_Dif(size, lvls, elem_1, elem_2);	//Вывод настройки сложности
+	}
+
+	system("cls");
+
+	//Присвоение значений размерам куба
+	matr_size = size;
+	lvl_amount = lvls;
+}
+
 void Choose_Difficulty()
 {
 	//Функция предоставляет возможность выбрать сложность игры
 
 	system("cls");
 
-	Move selection = Move(0);		//Вохможность выбора
+	Move selection = Move(0);				//Вохможность выбора
 
-	int choice = 2;					//Выбранный элемент
-	char elem_1, elem_2, elem_3;	//Символы, показывающие какой элемент выбран
+	int choice = 1;							//Выбранный элемент
+	char elem_1, elem_2, elem_3, elem_4;	//Символы, показывающие какой элемент выбран
 
-	Print_Diffs(' ', char(254), ' ');	//Вывод сложностей на выбор
+	Print_Diffs(char(254), ' ', ' ', ' ');	//Вывод сложностей на выбор
 
+	//Ожидание нажатия Enter
 	while (_kbhit && selection != 13)
 	{
 		selection = (Move)_getch();
@@ -51,57 +133,85 @@ void Choose_Difficulty()
 			//Перемещение между полями сложностей
 			case LEFT:
 			{
-				choice == 1 ? choice = 3 : choice--;
+				choice == 1 ? choice = 4 : choice--;
 				break;
 			}
 			case RIGHT:
 			{
-				choice == 3 ? choice = 1 : choice++;
+				choice == 4 ? choice = 1 : choice++;
 				break;
 			}
 		}
 
 		//Присвоение показывающим выбранный элемент символам нужные коды для отображения
-		if (choice == 1)
+		switch (choice)
 		{
-			elem_1 = 254;
-			elem_2 = ' ';
-			elem_3 = ' ';
-		}
-		else if (choice == 2)
-		{
-			elem_1 = ' ';
-			elem_2 = 254;
-			elem_3 = ' ';
-		}
-		else
-		{
-			elem_1 = ' ';
-			elem_2 = ' ';
-			elem_3 = 254;
+			case 1:
+			{
+				elem_1 = 254;
+				elem_2 = ' ';
+				elem_3 = ' ';
+				elem_4 = ' ';
+				break;
+			}
+			case 2:
+			{
+				elem_1 = ' ';
+				elem_2 = 254;
+				elem_3 = ' ';
+				elem_4 = ' ';
+				break;
+			}
+			case 3:
+			{
+				elem_1 = ' ';
+				elem_2 = ' ';
+				elem_3 = 254;
+				elem_4 = ' ';
+				break;
+			}
+			case 4:
+			{
+				elem_1 = ' ';
+				elem_2 = ' ';
+				elem_3 = ' ';
+				elem_4 = 254;
+				break;
+			}
 		}
 
 		system("cls");
-		Print_Diffs(elem_1, elem_2, elem_3);	//Вывод сложностей на выбор
+		Print_Diffs(elem_1, elem_2, elem_3, elem_4);	//Вывод сложностей на выбор
 	}
 
 	system("cls");
 
 	//Присвоение значений размерам куба в зависимости от сложности
-	if (choice == 1)
+	switch (choice)
 	{
-		matr_size = 17;
-		lvl_amount = 6;
-	}
-	else if (choice == 2)
-	{
-		matr_size = 21;
-		lvl_amount = 7;
-	}
-	else
-	{
-		matr_size = 31;
-		lvl_amount = 8;
+		case 1:
+		{
+			matr_size = 17;
+			lvl_amount = 6;
+			break;
+		}
+		case 2:
+		{
+			matr_size = 21;
+			lvl_amount = 7;
+			break;
+		}
+		case 3:
+		{
+			matr_size = 31;
+			lvl_amount = 8;
+			break;
+		}
+		case 4:
+		{
+			Custom_Dif();		//Особая настройка сложности
+			break;
+		}
 	}
 }
 
@@ -109,13 +219,14 @@ void Main_Screen()
 {
 	//Функция отвечает за взаимодействие с главным экраном
 
-	Move selection = Move(0);	//Вохможность выбора
+	Move selection = Move(0);	//Возможность выбора
 
 	int choice = 1;				//Выбранный элемент
 	char elem_1, elem_2;		//Символы, показывающие какой элемент выбран
 
 	Print_Main_Screen(char(254), ' ');	//Вывод главного экрана
 
+	//Ожидание нажатия Enter
 	while (_kbhit && selection != 13)
 	{
 		selection = (Move)_getch();
@@ -125,20 +236,9 @@ void Main_Screen()
 		else
 			break;
 
-		switch (selection)
-		{
-			//Перемещение между полями выбора
-			case UP:
-			{
-				choice == 1 ? choice = 2 : choice = 1;
-				break;
-			}
-			case DOWN:
-			{
-				choice == 2 ? choice = 1 : choice = 2;
-				break;
-			}
-		}
+		//Перемещение между полями выбора
+		if (selection == UP || selection == DOWN)
+			choice == 1 ? choice = 2 : choice = 1;
 
 		//Присвоение показывающим выбранный элемент символам нужные коды для отображения
 		if (choice == 1)
@@ -173,13 +273,14 @@ void End_Screen()
 
 	system("cls");
 
-	Move selection = Move(0);	//Вохможность выбора
+	Move selection = Move(0);	//Возможность выбора
 
 	int choice = 1;				//Выбранный элемент
 	char elem_1, elem_2;		//Символы, показывающие какой элемент выбран
 
 	Print_End_Screen(char(254), ' ');	//Вывод экрана победы
 
+	//Ожидание нажатия Enter
 	while (_kbhit && selection != 13)
 	{
 		selection = (Move)_getch();
@@ -189,20 +290,9 @@ void End_Screen()
 		else
 			break;
 
-		switch (selection)
-		{
-			//Перемещение между полями выбора
-			case LEFT:
-			{
-				choice == 1 ? choice = 2 : choice = 1;
-				break;
-			}
-			case RIGHT:
-			{
-				choice == 2 ? choice = 1 : choice = 2;
-				break;
-			}
-		}
+		//Перемещение между полями выбора
+		if (selection == LEFT || selection == RIGHT)
+			choice == 1 ? choice = 2 : choice = 1;
 
 		//Присвоение показывающим выбранный элемент символам нужные коды для отображения
 		if (choice == 1)
@@ -322,14 +412,14 @@ int main()
 
 	Move player = Move(0);		//Персонаж
 
+	Main_Screen();	//Вывод главного экрана
+
 	int*** cube = new int** [lvl_amount];	//Куб
 	int x = 1, y = 1;						//Начальное положение персонажа
 
 	//Сохранение уже созданных уровней
 	bool flag = true, flag2 = true;
 	int max_z = 0;
-
-	Main_Screen();	//Вывод главного экрана
 
 	//Проход по всем уровням
 	while (z < lvl_amount)
@@ -384,14 +474,14 @@ void Recogn_Input(Move& selection)
 
 	switch (selection)
 	{
-		case 68:	//Введено 'A' или 'Ф' или 'ф'
+		case 68:	//Введено 'D' или 'В' или 'в'
 		case 130:
 		case 162:
 		{
 			selection = RIGHT;
 			break;
 		}
-		case 65:	//Введено 'В' или 'В' или 'в'
+		case 65:	//Введено 'A' или 'Ф' или 'ф'
 		case 148:
 		case 228:
 		{
@@ -437,14 +527,78 @@ void Recogn_Input(Move& selection)
 }
 
 //Вывод данных
-void Print_Diffs(char elem_1, char elem_2, char elem_3)
+void Print_Custom_Dif(int size, int lvls, char elem_1, char elem_2)
+{
+	//Функция выводит настройку сложности
+
+	cout << endl << endl << "\tadjust  difficulty" << endl << endl;
+
+	//строка 1
+	cout << "        " << char(201);
+	for (int i = 0; i < 16; i++)
+		cout << char(205);
+	cout << char(187) << endl;
+
+	//строка 2
+	cout << "        " << char(186) << "   level size   " << char(186) << endl;
+
+	//строка 3
+	cout << "       " << elem_1 << char(186);
+	for (int i = 0; i < 16; i++)
+		cout << ' ';
+	cout << char(186) << endl;
+
+	//строка 4
+	cout << "        " << char(186) << "<-     " << size;
+	if (size < 10)
+		cout << ' ';
+	cout << "     ->" << char(186) << endl;
+
+	//строка 5
+	cout << "        " << char(200);
+	for (int i = 0; i < 16; i++)
+		cout << char(205);
+	cout << char(188) << endl;
+
+	//строка 6
+	cout << "        " << char(201);
+	for (int i = 0; i < 16; i++)
+		cout << char(205);
+	cout << char(187) << endl;
+
+	//строка 7
+	cout << "        " << char(186) << "amount of levels" << char(186) << endl;
+
+	//строка 8
+	cout << "       " << elem_2 << char(186);
+	for (int i = 0; i < 16; i++)
+		cout << ' ';
+	cout << char(186) << endl;
+
+	//строка 9
+	cout << "        " << char(186) << "<-     " << lvls;
+	if (lvls != 10)
+		cout << ' ';
+	cout << "     ->" << char(186) << endl;
+
+	//строка 10
+	cout << "        " << char(200);
+	for (int i = 0; i < 16; i++)
+		cout << char(205);
+	cout << char(188) << endl;
+
+	cout << endl << endl;
+	cout << "    use W, S and A, D to switch";
+}
+
+void Print_Diffs(char elem_1, char elem_2, char elem_3, char elem_4)
 {
 	//Функция выводит экран сложностей
 
 	cout << endl << endl << "\tselect difficulty" << endl << endl;
 
 	//строка 1
-	cout << "     " << char(201);
+	cout << "  " << char(201);
 	for (int i = 0; i < 4; i++)
 		cout << char(205);
 	cout << char(187) << char(201);
@@ -452,14 +606,18 @@ void Print_Diffs(char elem_1, char elem_2, char elem_3)
 		cout << char(205);
 	cout << char(187) << char(201);
 	for (int i = 0; i < 4; i++)
+		cout << char(205);
+	cout << char(187) << char(201);
+	for (int i = 0; i < 6; i++)
 		cout << char(205);
 	cout << char(187) << endl;
 
 	//строка 2
-	cout << "     " << char(186) << "easy" << char(186) << char(186) << "normal" << char(186) << char(186) << "hard" << char(186) << endl;
+	cout << "  " << char(186) << "easy" << char(186) << char(186) << "normal" << char(186);
+	cout << char(186) << "hard" << char(186) << char(186) << "custom" << char(186) << endl;
 
 	//строка 3
-	cout << "     " << char(200);
+	cout << "  " << char(200);
 	for (int i = 0; i < 4; i++)
 		cout << char(205);
 	cout << char(188) << char(200);
@@ -468,16 +626,21 @@ void Print_Diffs(char elem_1, char elem_2, char elem_3)
 	cout << char(188) << char(200);
 	for (int i = 0; i < 4; i++)
 		cout << char(205);
+	cout << char(188) << char(200);
+	for (int i = 0; i < 6; i++)
+		cout << char(205);
 	cout << char(188) << endl;
 
 	//Отображение выбранного элемента
-	cout << "     ";
+	cout << "  ";
 	for (int i = 0; i < 6; i++)
 		cout << elem_1;
 	for (int i = 0; i < 8; i++)
 		cout << elem_2;
 	for (int i = 0; i < 6; i++)
 		cout << elem_3;
+	for (int i = 0; i < 8; i++)
+		cout << elem_4;
 
 	cout << endl << endl;
 	cout << "       use A, D to switch";
@@ -530,8 +693,6 @@ void Print_Wall(int** matr, int x, int y)
 			cout << char(205);									// " = "
 		else if (L != 1 && R != 1)
 			cout << char(186);									// " || "
-		else
-			cout << char(197);									//доп. элемент
 	}
 }
 
@@ -586,35 +747,35 @@ void Print_Level(int** matr, int x, int y)
 void Print_Main_Screen(char elem_1, char elem_2)
 {
 	//Функция выводит главный экран
-
-	cout << "   CUBIC MAZE" << endl << endl;
+	cout << endl;
+	cout << "    CUBIC  MAZE" << endl << endl;
 
 	//строка 1
-	cout << "   " << char(201);
+	cout << "    " << char(201);
 	for (int i = 0; i < 8; i++)
 		cout << char(205);
 	cout << char(187) << endl;
 
 	//строка 2
-	cout << "  " << elem_1 << char(186) << "  play  " << char(186) << endl;
+	cout << "   " << elem_1 << char(186) << "  play  " << char(186) << endl;
 
 	//строка 3
-	cout << "   " << char(200);
+	cout << "    " << char(200);
 	for (int i = 0; i < 8; i++)
 		cout << char(205);
 	cout << char(188) << endl;
 
 	//строка 4
-	cout << "   " << char(201);
+	cout << "    " << char(201);
 	for (int i = 0; i < 8; i++)
 		cout << char(205);
 	cout << char(187) << endl;
 
 	//строка 5
-	cout << "  " << elem_2 << char(186) << "tutorial" << char(186) << endl;
+	cout << "   " << elem_2 << char(186) << "tutorial" << char(186) << endl;
 
 	//строка 6
-	cout << "   " << char(200);
+	cout << "    " << char(200);
 	for (int i = 0; i < 8; i++)
 		cout << char(205);
 	cout << char(188) << endl;
@@ -627,7 +788,7 @@ void Print_End_Screen(char elem_1, char elem_2)
 {
 	//Функция выводит экран победы
 
-	cout << endl << endl << "\tCONGRATULATIONS!" << endl;
+	cout << endl << endl << "\t CONGRATULATIONS!" << endl;
 	cout << " You've made it through the maze!" << endl << endl;
 
 	//строка 1
@@ -659,7 +820,7 @@ void Print_End_Screen(char elem_1, char elem_2)
 		cout << elem_2;
 
 	cout << endl << endl;
-	cout << "       use A, D to switch";
+	cout << "       use A, D  to switch";
 }
 
 void Tutorial()
