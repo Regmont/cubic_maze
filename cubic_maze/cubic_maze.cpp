@@ -1,5 +1,6 @@
 ﻿#include <iostream>
 #include <conio.h>
+#include <Windows.h>
 #include "maze_gen.h"
 
 using namespace std;
@@ -24,6 +25,7 @@ void Print_End_Screen(char elem_1, char elem_2);
 void Print_Wall(int** matr, int x, int y);
 void Print_Level(int** matr, int x, int y);
 void Tutorial();
+void Print_Player(int x, int y, int pl_coord, int cell);
 
 //Главные функции
 void Custom_Dif()
@@ -320,12 +322,14 @@ void End_Screen()
 	}
 }
 
-void Logic(int** matr, int& x, int& y, int& z, Move& player, bool& flag, bool& flag2, int& max_z)
+void Logic(int** matr, int& x, int& y, int& z, Move& player)
 {
 	while (_kbhit && !GameOver)
 	{
 		player = (Move)_getch();    //Считывание нажатой клавиши
 		Recogn_Input(player);		//Опознание вводимых данных
+
+		int pl_coord;	//место, откуда перместился игрок
 
 		switch (player)
 		{
@@ -333,28 +337,44 @@ void Logic(int** matr, int& x, int& y, int& z, Move& player, bool& flag, bool& f
 			case LEFT:
 			{
 				if (matr[y][x - 1] != 1)
+				{
 					x--;
+					pl_coord = 1;	//Справа
+					Print_Player(x, y, pl_coord, matr[y][x + 1]);	//Вывод местоположения игрока
+				}
 
 				break;
 			}
 			case RIGHT:
 			{
 				if (matr[y][x + 1] != 1)
+				{
 					x++;
+					pl_coord = 2;	//Слева
+					Print_Player(x, y, pl_coord, matr[y][x - 1]);	//Вывод местоположения игрока
+				}
 
 				break;
 			}
 			case UP:
 			{
 				if (matr[y - 1][x] != 1)
+				{
 					y--;
+					pl_coord = 3;	//Снизу
+					Print_Player(x, y, pl_coord, matr[y + 1][x]);	//Вывод местоположения игрока
+				}
 
 				break;
 			}
 			case DOWN:
 			{
 				if (matr[y + 1][x] != 1)
+				{
 					y++;
+					pl_coord = 4;	//Сверху
+					Print_Player(x, y, pl_coord, matr[y - 1][x]);	//Вывод местоположения игрока
+				}
 
 				break;
 			}
@@ -363,11 +383,6 @@ void Logic(int** matr, int& x, int& y, int& z, Move& player, bool& flag, bool& f
 				if (matr[y][x] == 2)
 				{
 					z++;
-
-					//Проверка для сохранения существующего уровня
-					if (max_z < z)
-						max_z++;
-
 					GameOver = true;	//Прерывание игры
 				}
 				else
@@ -379,11 +394,6 @@ void Logic(int** matr, int& x, int& y, int& z, Move& player, bool& flag, bool& f
 				if (matr[y][x] == 3)
 				{
 					z--;
-
-					//Сохранения существующего уровня
-					flag2 = false;
-					flag = false;
-
 					GameOver = true;	//Прерывание игры
 				}
 
@@ -397,12 +407,6 @@ void Logic(int** matr, int& x, int& y, int& z, Move& player, bool& flag, bool& f
 				break;
 			}
 		}
-
-		if (player != TP_UP && player != TP_DOWN && player != QUIT)
-		{
-			system("cls");
-			Print_Level(matr, x, y);	//Вывод уровня
-		}
 	}
 }
 
@@ -410,52 +414,36 @@ int main()
 {
 	srand(time(0));
 
-	Move player = Move(0);		//Персонаж
+	Move player = Move(0);	//Персонаж
 
-	Main_Screen();	//Вывод главного экрана
+	Main_Screen();			//Вывод главного экрана
 
 	int*** cube = new int** [lvl_amount];	//Куб
 	int x = 1, y = 1;						//Начальное положение персонажа
 
-	//Сохранение уже созданных уровней
-	bool flag = true, flag2 = true;
-	int max_z = 0;
+	//Массив для сохранение уже созданных уровней
+	bool* arr = new bool[lvl_amount];
+
+	for (int i = 0; i < lvl_amount; i++)
+		arr[i] = false;
 
 	//Проход по всем уровням
 	while (z < lvl_amount)
 	{
-		//Проверки на существование уровня
-		if (flag)
+		//Проверка на существование уровня
+		if (arr[z] == false)
 		{
-			if (flag2)
-			{
-				//Создание нового уровня
-				cube[z] = new int* [matr_size];
-				for (int i = 0; i < matr_size; i++)
-					cube[z][i] = new int[matr_size];
+			//Создание нового уровня
+			cube[z] = new int* [matr_size];
+			for (int i = 0; i < matr_size; i++)
+				cube[z][i] = new int[matr_size];
 
-				cube[z] = generate_maze_matrix(matr_size, x, y, z);
-			}
-			else
-			{
-				if (z != max_z)
-				{
-					//Создание нового уровня
-					cube[z] = new int* [matr_size];
-					for (int i = 0; i < matr_size; i++)
-						cube[z][i] = new int[matr_size];
-
-					cube[z] = generate_maze_matrix(matr_size, x, y, z);
-				}
-
-				flag2 = true;
-			}
+			cube[z] = generate_maze_matrix(matr_size, x, y, z);
+			arr[z] = true;	//Пометка, какой уровень уже загружен
 		}
-		else
-			flag = true;
 
-		Print_Level(cube[z], x, y);		//Вывод уровня
-		Logic(cube[z], x, y, z, player, flag, flag2, max_z);
+		Print_Level(cube[z], x, y);			//Вывод уровня
+		Logic(cube[z], x, y, z, player);	//Использование основной логики
 
 		GameOver = false;
 		system("cls");
@@ -703,6 +691,7 @@ void Print_Level(int** matr, int x, int y)
 	for (int i = 0; i < matr_size; i++)
 	{
 		for (int j = 0; j < matr_size; j++)
+
 			if (i == y && j == x)
 				cout << char(2);	//Игрок
 			else
@@ -850,4 +839,62 @@ void Tutorial()
 	}
 
 	system("cls");
+}
+
+void Print_Player(int x, int y, int pl_coord, int cell)
+{
+	//Функция выводит местоположение игрока
+
+	HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
+	COORD c = { x, y };
+
+	SetConsoleCursorPosition(h, c);	//Курсор помещается на координаты, где игрок
+	cout << char(2);
+
+	//Затирание места, где был ранее игрок
+	switch (pl_coord)
+	{
+		case 1:
+		{
+			c.X++;
+			break;
+		}
+		case 2:
+		{
+			c.X--;
+			break;
+		}
+		case 3:
+		{
+			c.Y++;
+			break;
+		}
+		case 4:
+		{
+			c.Y--;
+			break;
+		}
+	}
+
+	SetConsoleCursorPosition(h, c);
+
+	//Проверка на наличие портала в месте, где был игрок
+	if (cell < 2)
+		cout << ' ';
+	else if (cell == 2)
+		cout << char(253);	//Телепорт вверх
+	else
+		cout << char(15);	//Телепорт вниз
+
+	//Курсор перемещается для удобной игры
+	c.X = matr_size;
+	if (y < matr_size / 4)
+		c.Y = matr_size / 4;
+	else if (y < matr_size / 2)
+		c.Y = matr_size / 2;
+	else if (y < matr_size * 3 / 4)
+		c.Y = matr_size * 3 / 4;
+	else
+		c.Y = matr_size;
+	SetConsoleCursorPosition(h, c);
 }
