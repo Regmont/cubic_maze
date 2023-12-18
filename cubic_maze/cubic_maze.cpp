@@ -2,33 +2,109 @@
 #include <conio.h>
 #include <Windows.h>
 #include "maze_gen.h"
+#include "ConsolePrint.h"
 
 using namespace std;
 
-int matr_size;			//Размер уровня (сторона квадрата)
-int lvl_amount;			//Количество уровней
 bool GameOver = false;	//Конец игры или переход на другой уровень
-int z = 0;				//Текущее положение кубе: уровень(на 1 меньше выводимого на экран)
 
 //Считываемые символы
 enum Move { LEFT = 97, RIGHT = 100, UP = 119, DOWN = 115, TP_UP = 113, TP_DOWN = 101, QUIT = 112 };
+
+class Level
+{
+public:
+	int** matr;
+	int lvlSize;
+
+	~Level()
+	{
+		delete[] matr;
+	}
+};
+
+class CubeMaze : Level
+{
+	Level* cube;
+	int currentLvl = 0;
+	int lvlAmount;
+public:
+	~CubeMaze()
+	{
+		delete[] cube;
+	}
+
+	int GetLevelSize()
+	{
+		return lvlSize;
+	}
+	void SetLevelSize(int size)
+	{
+		lvlSize = size;
+	}
+
+	int& GetCurrentLevel()
+	{
+		return currentLvl;
+	}
+	void SetCurrentLevel(int level)
+	{
+		currentLvl = level;
+	}
+
+	void SetCube(int lvlAmount, int lvlSize)
+	{
+		this->lvlAmount = lvlAmount;
+		cube = new Level[lvlAmount];
+		this->lvlSize = lvlSize;
+	}
+
+	int& GetLevelAmount()
+	{
+		return lvlAmount;
+	}
+
+	void SetLevel(int level, int** matr)
+	{
+		cube[level].matr = matr;
+	}
+	int** GetLevel(int index)
+	{
+		return cube[index].matr;
+	}
+
+	int& operator() (int currentLvl, int y, int x)
+	{
+		return cube[currentLvl].matr[y][x];
+	}
+};
+
+class Player
+{
+	Move movement = Move(0);
+	
+public:
+	int x = 1;
+	int y = 1;
+
+	Move GetMove()
+	{
+		return movement;
+	}
+	Move& SetMove()
+	{
+		return movement;
+	}
+};
 
 //Прототипы
 int main();		//Для перезапуска игры
 
 void Recogn_Input(Move& selection);
-
-void Print_Custom_Dif(int size, int lvls, char elem_1, char elem_2);
-void Print_Diffs(char elem_1, char elem_2, char elem_3, char elem_4);
-void Print_Main_Screen(char elem_1, char elem_2);
-void Print_End_Screen(char elem_1, char elem_2);
-void Print_Wall(int** matr, int x, int y);
-void Print_Level(int** matr, int x, int y);
-void Tutorial();
-void Print_Player(int x, int y, int pl_coord, int cell);
+void Print_Level(CubeMaze& maze, int x, int y);
 
 //Главные функции
-void Custom_Dif()
+void Custom_Dif(CubeMaze& maze)
 {
 	//Функция даёт возможность настроить сложность игры
 
@@ -103,11 +179,10 @@ void Custom_Dif()
 	system("cls");
 
 	//Присвоение значений размерам куба
-	matr_size = size;
-	lvl_amount = lvls;
+	maze.SetCube(lvls, size);
 }
 
-void Choose_Difficulty()
+void Choose_Difficulty(CubeMaze& maze)
 {
 	//Функция предоставляет возможность выбрать сложность игры
 
@@ -193,31 +268,28 @@ void Choose_Difficulty()
 	{
 		case 1:
 		{
-			matr_size = 17;
-			lvl_amount = 6;
+			maze.SetCube(6, 17);
 			break;
 		}
 		case 2:
 		{
-			matr_size = 21;
-			lvl_amount = 7;
+			maze.SetCube(7, 21);
 			break;
 		}
 		case 3:
 		{
-			matr_size = 31;
-			lvl_amount = 8;
+			maze.SetCube(8, 31);
 			break;
 		}
 		case 4:
 		{
-			Custom_Dif();		//Особая настройка сложности
+			Custom_Dif(maze);		//Особая настройка сложности
 			break;
 		}
 	}
 }
 
-void Main_Screen()
+void Main_Screen(CubeMaze& maze)
 {
 	//Функция отвечает за взаимодействие с главным экраном
 
@@ -261,15 +333,15 @@ void Main_Screen()
 	system("cls");
 
 	if (choice == 1)
-		Choose_Difficulty();	//Выбор сложности игры
+		Choose_Difficulty(maze);	//Выбор сложности игры
 	else
 	{
 		Tutorial();		//Вывод обучения
-		Main_Screen();	//Возврат к главному экрану
+		Main_Screen(maze);	//Возврат к главному экрану
 	}
 }
 
-void End_Screen()
+void End_Screen(CubeMaze& maze)
 {
 	//Функция отвечает за взаимодействие с экраном победы
 
@@ -317,83 +389,88 @@ void End_Screen()
 	if (choice == 1)
 	{
 		GameOver = false;	//Конец игры
-		z = 0;
+		maze.SetCurrentLevel(0);
 		main();				//Начало новой игры
 	}
 }
 
-void Logic(int** matr, int& x, int& y, int& z, Move& player)
+void Logic(CubeMaze& maze, Player& player)
 {
+	int lvlSize = maze.GetLevelSize();
+	int currentLvl = maze.GetCurrentLevel();
+
+	int& x = player.x;
+	int& y = player.y;
+
 	while (_kbhit && !GameOver)
 	{
-		player = (Move)_getch();    //Считывание нажатой клавиши
-		Recogn_Input(player);		//Опознание вводимых данных
+		player.SetMove() = (Move)_getch();		//Считывание нажатой клавиши
+		Recogn_Input(player.SetMove());			//Опознание вводимых данных
 
 		int pl_coord;	//место, откуда перместился игрок
 
-		switch (player)
+		switch (player.GetMove())
 		{
 			//Выполнение действий в зависимости от того, что нажал игрок
 			case LEFT:
 			{
-				if (matr[y][x - 1] != 1)
+				if (maze(currentLvl, y, x - 1) != 1)
 				{
 					x--;
 					pl_coord = 1;	//Справа
-					Print_Player(x, y, pl_coord, matr[y][x + 1]);	//Вывод местоположения игрока
+					Print_Player(x, y, pl_coord, maze(currentLvl, y, x + 1), lvlSize);	//Вывод местоположения игрока
 				}
 
 				break;
 			}
 			case RIGHT:
 			{
-				if (matr[y][x + 1] != 1)
+				if (maze(currentLvl, y, x + 1) != 1)
 				{
 					x++;
 					pl_coord = 2;	//Слева
-					Print_Player(x, y, pl_coord, matr[y][x - 1]);	//Вывод местоположения игрока
+					Print_Player(x, y, pl_coord, maze(currentLvl, y, x - 1), lvlSize);	//Вывод местоположения игрока
 				}
 
 				break;
 			}
 			case UP:
 			{
-				if (matr[y - 1][x] != 1)
+				if (maze(currentLvl, y - 1, x) != 1)
 				{
 					y--;
 					pl_coord = 3;	//Снизу
-					Print_Player(x, y, pl_coord, matr[y + 1][x]);	//Вывод местоположения игрока
+					Print_Player(x, y, pl_coord, maze(currentLvl, y + 1, x), lvlSize);	//Вывод местоположения игрока
 				}
 
 				break;
 			}
 			case DOWN:
 			{
-				if (matr[y + 1][x] != 1)
+				if (maze(currentLvl, y + 1, x) != 1)
 				{
 					y++;
 					pl_coord = 4;	//Сверху
-					Print_Player(x, y, pl_coord, matr[y - 1][x]);	//Вывод местоположения игрока
+					Print_Player(x, y, pl_coord, maze(currentLvl, y - 1, x), lvlSize);	//Вывод местоположения игрока
 				}
 
 				break;
 			}
 			case TP_UP:
 			{
-				if (matr[y][x] == 2)
+				if (maze(currentLvl, y, x) == 2)
 				{
-					z++;
+					maze.SetCurrentLevel(currentLvl + 1);
 					GameOver = true;	//Прерывание игры
 				}
-				else
 
 				break;
 			}
 			case TP_DOWN:
 			{
-				if (matr[y][x] == 3)
+				if (maze(currentLvl, y, x) == 3)
 				{
-					z--;
+					maze.SetCurrentLevel(currentLvl - 1);
 					GameOver = true;	//Прерывание игры
 				}
 
@@ -403,7 +480,7 @@ void Logic(int** matr, int& x, int& y, int& z, Move& player)
 			{
 				//Ручное завершение игры
 				GameOver = true;
-				z = lvl_amount;
+				maze.SetCurrentLevel(maze.GetLevelAmount());
 				break;
 			}
 		}
@@ -414,51 +491,56 @@ int main()
 {
 	srand(time(0));
 
-	Move player = Move(0);	//Персонаж
+	Player player;				//Персонаж
+	CubeMaze maze;				//Лабиринт
 
-	Main_Screen();			//Вывод главного экрана
+	Main_Screen(maze);			//Вывод главного экрана
 
-	int*** cube = new int** [lvl_amount];	//Куб
-	int x = 1, y = 1;						//Начальное положение персонажа
+	int& lvlAmount = maze.GetLevelAmount();
+	int& currentLvl = maze.GetCurrentLevel();
 
-	//Массив для сохранение уже созданных уровней
-	bool* arr = new bool[lvl_amount];
-
-	for (int i = 0; i < lvl_amount; i++)
-		arr[i] = false;
-
-	//Проход по всем уровням
-	while (z < lvl_amount)
+	for (int i = 0; i < lvlAmount; i++)
 	{
-		//Проверка на существование уровня
-		if (arr[z] == false)
-		{
-			//Создание нового уровня
-			cube[z] = new int* [matr_size];
-			for (int i = 0; i < matr_size; i++)
-				cube[z][i] = new int[matr_size];
-
-			cube[z] = generate_maze_matrix(matr_size, x, y, z);
-			arr[z] = true;	//Пометка, какой уровень уже загружен
-		}
-
-		Print_Level(cube[z], x, y);			//Вывод уровня
-		Logic(cube[z], x, y, z, player);	//Использование основной логики
-
-		GameOver = false;
-		system("cls");
+		maze.SetLevel(i, generate_maze_matrix(maze.GetLevelSize(), player.x, player.y, currentLvl));
 	}
 
-	if (player != QUIT)
-		End_Screen();		//Вывод экрана победы
+//Массив для сохранение уже созданных уровней
+	bool* arr = new bool[lvlAmount];
+
+	for (int i = 0; i < lvlAmount; i++)
+		arr[i] = false;
+
+//Проход по всем уровням
+while (currentLvl < lvlAmount)
+{
+	//Проверка на существование уровня
+	if (arr[currentLvl] == false)
+	{
+		
+		maze.SetLevel(currentLvl, generate_maze_matrix(maze.GetLevelSize(), player.x, player.y, currentLvl));
+		arr[currentLvl] = true;			//Пометка, какой уровень уже загружен
+	}
+
+	Print_Level(maze, player.x, player.y);	//Вывод уровня
+	Logic(maze, player);					//Использование основной логики
+
+	GameOver = false;
+	system("cls");
+}
+	if (player.GetMove() != QUIT)
+		End_Screen(maze);		//Вывод экрана победы
 	else
-		cout << "\n\tGame Over!";
+	{
+		cout << "\n\tGame Over!\n";
+		system("pause");
+	}
 }
 
 //Ввод данных
 void Recogn_Input(Move& selection)
 {
 	//Функция преобразует нежелательный способ ввода в желательный (для enum)
+	//Move selection = player.GetMove();
 
 	switch (selection)
 	{
@@ -466,6 +548,7 @@ void Recogn_Input(Move& selection)
 		case 130:
 		case 162:
 		{
+			//player.SetMove(RIGHT);
 			selection = RIGHT;
 			break;
 		}
@@ -473,6 +556,7 @@ void Recogn_Input(Move& selection)
 		case 148:
 		case 228:
 		{
+			//player.SetMove(LEFT);
 			selection = LEFT;
 			break;
 		}
@@ -480,6 +564,7 @@ void Recogn_Input(Move& selection)
 		case 150:
 		case 230:
 		{
+			//player.SetMove(UP);
 			selection = UP;
 			break;
 		}
@@ -487,6 +572,7 @@ void Recogn_Input(Move& selection)
 		case 155:
 		case 235:
 		{
+			//player.SetMove(DOWN);
 			selection = DOWN;
 			break;
 		}
@@ -494,6 +580,7 @@ void Recogn_Input(Move& selection)
 		case 137:
 		case 169:
 		{
+			//player.SetMove(TP_UP);
 			selection = TP_UP;
 			break;
 		}
@@ -501,6 +588,7 @@ void Recogn_Input(Move& selection)
 		case 147:
 		case 227:
 		{
+			//player.SetMove(TP_DOWN);
 			selection = TP_DOWN;
 			break;
 		}
@@ -508,6 +596,7 @@ void Recogn_Input(Move& selection)
 		case 167:
 		case 135:
 		{
+			//player.SetMove(QUIT);
 			selection = QUIT;
 			break;
 		}
@@ -515,187 +604,21 @@ void Recogn_Input(Move& selection)
 }
 
 //Вывод данных
-void Print_Custom_Dif(int size, int lvls, char elem_1, char elem_2)
-{
-	//Функция выводит настройку сложности
-
-	cout << endl << endl << "\tadjust  difficulty" << endl << endl;
-
-	//строка 1
-	cout << "        " << char(201);
-	for (int i = 0; i < 16; i++)
-		cout << char(205);
-	cout << char(187) << endl;
-
-	//строка 2
-	cout << "        " << char(186) << "   level size   " << char(186) << endl;
-
-	//строка 3
-	cout << "       " << elem_1 << char(186);
-	for (int i = 0; i < 16; i++)
-		cout << ' ';
-	cout << char(186) << endl;
-
-	//строка 4
-	cout << "        " << char(186) << "<-     " << size;
-	if (size < 10)
-		cout << ' ';
-	cout << "     ->" << char(186) << endl;
-
-	//строка 5
-	cout << "        " << char(200);
-	for (int i = 0; i < 16; i++)
-		cout << char(205);
-	cout << char(188) << endl;
-
-	//строка 6
-	cout << "        " << char(201);
-	for (int i = 0; i < 16; i++)
-		cout << char(205);
-	cout << char(187) << endl;
-
-	//строка 7
-	cout << "        " << char(186) << "amount of levels" << char(186) << endl;
-
-	//строка 8
-	cout << "       " << elem_2 << char(186);
-	for (int i = 0; i < 16; i++)
-		cout << ' ';
-	cout << char(186) << endl;
-
-	//строка 9
-	cout << "        " << char(186) << "<-     " << lvls;
-	if (lvls != 10)
-		cout << ' ';
-	cout << "     ->" << char(186) << endl;
-
-	//строка 10
-	cout << "        " << char(200);
-	for (int i = 0; i < 16; i++)
-		cout << char(205);
-	cout << char(188) << endl;
-
-	cout << endl << endl;
-	cout << "    use W, S and A, D to switch";
-}
-
-void Print_Diffs(char elem_1, char elem_2, char elem_3, char elem_4)
-{
-	//Функция выводит экран сложностей
-
-	cout << endl << endl << "\tselect difficulty" << endl << endl;
-
-	//строка 1
-	cout << "  " << char(201);
-	for (int i = 0; i < 4; i++)
-		cout << char(205);
-	cout << char(187) << char(201);
-	for (int i = 0; i < 6; i++)
-		cout << char(205);
-	cout << char(187) << char(201);
-	for (int i = 0; i < 4; i++)
-		cout << char(205);
-	cout << char(187) << char(201);
-	for (int i = 0; i < 6; i++)
-		cout << char(205);
-	cout << char(187) << endl;
-
-	//строка 2
-	cout << "  " << char(186) << "easy" << char(186) << char(186) << "normal" << char(186);
-	cout << char(186) << "hard" << char(186) << char(186) << "custom" << char(186) << endl;
-
-	//строка 3
-	cout << "  " << char(200);
-	for (int i = 0; i < 4; i++)
-		cout << char(205);
-	cout << char(188) << char(200);
-	for (int i = 0; i < 6; i++)
-		cout << char(205);
-	cout << char(188) << char(200);
-	for (int i = 0; i < 4; i++)
-		cout << char(205);
-	cout << char(188) << char(200);
-	for (int i = 0; i < 6; i++)
-		cout << char(205);
-	cout << char(188) << endl;
-
-	//Отображение выбранного элемента
-	cout << "  ";
-	for (int i = 0; i < 6; i++)
-		cout << elem_1;
-	for (int i = 0; i < 8; i++)
-		cout << elem_2;
-	for (int i = 0; i < 6; i++)
-		cout << elem_3;
-	for (int i = 0; i < 8; i++)
-		cout << elem_4;
-
-	cout << endl << endl;
-	cout << "       use A, D to switch";
-}
-
-void Print_Wall(int** matr, int x, int y)
-{
-	//Функция выводит нужную стену
-
-	int max_el = matr_size - 1;	//Самый дальний элемент от начала
-
-	//Является ли внешней стеной
-	if (x == 0 || y == 0 || x == max_el || y == max_el)
-	{
-		if (x == 0 && y == 0)
-			cout << char(201);								//угол право-низ
-		else if (x == 0 && y == max_el)
-			cout << char(200);								//право-верх
-		else if (x == max_el && y == 0)
-			cout << char(187);								//угол лево-низ
-		else if (x == max_el && y == max_el)
-			cout << char(188);								//угол лево-верх
-		else if (y == 0)
-			matr[y + 1][x] != 1 ? cout << char(205) : cout << char(203);	// " = " или тройник лево-право-низ
-		else if (y == max_el)
-			matr[y - 1][x] != 1 ? cout << char(205) : cout << char(202);	// " = " или тройник лево-право-верх
-		else if (x == 0)
-			matr[y][x + 1] != 1 ? cout << char(186) : cout << char(204);	// " || " или тройник право-верх-низ
-		else
-			matr[y][x - 1] != 1 ? cout << char(186) : cout << char(185);	// " || " или тройник лево-верх-низ
-	}
-	else
-	{
-		int L = matr[y][x - 1];
-		int R = matr[y][x + 1];
-		int U = matr[y - 1][x];
-		int D = matr[y + 1][x];
-
-		if (L == 1 && R == 1 && U == 1 && D == 1)
-			cout << char(206);									//крест
-		else if (R == 1 && U != 1 && D == 1)
-			L != 1 ? cout << char(201) : cout << char(203);		//угол право-низ + тройник (лево)
-		else if (L != 1 && R == 1 && U == 1)
-			D != 1 ? cout << char(200) : cout << char(204);		//угол право-верх + тройник (низ)
-		else if (L == 1 && R != 1 && D == 1)
-			U != 1 ? cout << char(187) : cout << char(185);		//угол лево-низ + тройник (верх)
-		else if (L == 1 && D != 1 && U == 1)
-			R != 1 ? cout << char(188) : cout << char(202);		//угол лево-верх + тройник (право)
-		else if (U != 1 && D != 1)
-			cout << char(205);									// " = "
-		else if (L != 1 && R != 1)
-			cout << char(186);									// " || "
-	}
-}
-
-void Print_Level(int** matr, int x, int y)
+void Print_Level(CubeMaze& maze, int x, int y)
 {
 	//Функция выводит уровень
 
-	for (int i = 0; i < matr_size; i++)
+	int lvlSize = maze.GetLevelSize();
+	int currentLvl = maze.GetCurrentLevel();
+
+	for (int i = 0; i < lvlSize; i++)
 	{
-		for (int j = 0; j < matr_size; j++)
+		for (int j = 0; j < lvlSize; j++)
 
 			if (i == y && j == x)
 				cout << char(2);	//Игрок
 			else
-				switch (matr[i][j])
+				switch (maze(currentLvl, i, j))
 				{
 					case 0:
 					{
@@ -704,7 +627,7 @@ void Print_Level(int** matr, int x, int y)
 					}
 					case 1:
 					{
-						Print_Wall(matr, j, i);	//Стена
+						Print_Wall(maze.GetLevel(currentLvl), lvlSize, j, i);	//Стена
 						break;
 					}
 					case 2:
@@ -728,173 +651,7 @@ void Print_Level(int** matr, int x, int y)
 	}
 
 	//Вывод номера уровня
-	for (int i = 0; i < matr_size / 2 - 3; i++)
+	for (int i = 0; i < lvlSize / 2 - 3; i++)
 		cout << ' ';
-	cout << "level " << z + 1 << endl;
-}
-
-void Print_Main_Screen(char elem_1, char elem_2)
-{
-	//Функция выводит главный экран
-	cout << endl;
-	cout << "    CUBIC  MAZE" << endl << endl;
-
-	//строка 1
-	cout << "    " << char(201);
-	for (int i = 0; i < 8; i++)
-		cout << char(205);
-	cout << char(187) << endl;
-
-	//строка 2
-	cout << "   " << elem_1 << char(186) << "  play  " << char(186) << endl;
-
-	//строка 3
-	cout << "    " << char(200);
-	for (int i = 0; i < 8; i++)
-		cout << char(205);
-	cout << char(188) << endl;
-
-	//строка 4
-	cout << "    " << char(201);
-	for (int i = 0; i < 8; i++)
-		cout << char(205);
-	cout << char(187) << endl;
-
-	//строка 5
-	cout << "   " << elem_2 << char(186) << "tutorial" << char(186) << endl;
-
-	//строка 6
-	cout << "    " << char(200);
-	for (int i = 0; i < 8; i++)
-		cout << char(205);
-	cout << char(188) << endl;
-
-	cout << endl;
-	cout << "use W, S to switch";
-}
-
-void Print_End_Screen(char elem_1, char elem_2)
-{
-	//Функция выводит экран победы
-
-	cout << endl << endl << "\t CONGRATULATIONS!" << endl;
-	cout << " You've made it through the maze!" << endl << endl;
-
-	//строка 1
-	cout << "     " << char(201);
-	for (int i = 0; i < 10; i++)
-		cout << char(205);
-	cout << char(187) << char(201);
-	for (int i = 0; i < 9; i++)
-		cout << char(205);
-	cout << char(187) << endl;
-
-	//строка 2
-	cout << "     " << char(186) << "play again" << char(186) << char(186) << "quit game" << char(186) << endl;
-
-	//строка 3
-	cout << "     " << char(200);
-	for (int i = 0; i < 10; i++)
-		cout << char(205);
-	cout << char(188) << char(200);
-	for (int i = 0; i < 9; i++)
-		cout << char(205);
-	cout << char(188) << endl;
-
-	//выбранный элемент
-	cout << "     ";
-	for (int i = 0; i < 12; i++)
-		cout << elem_1;
-	for (int i = 0; i < 11; i++)
-		cout << elem_2;
-
-	cout << endl << endl;
-	cout << "       use A, D  to switch";
-}
-
-void Tutorial()
-{
-	//Функция выводит обучение
-
-	int back = 0;
-
-	cout << char(2) << " - you\n";
-	cout << char(253) << " - portal to the next level\n";
-	cout << char(15) << " - portal to the previous level\n";
-
-	cout << endl;
-
-	cout << "WASD - move\n";
-	cout << "Q - using first portal " << char(253) << endl;
-	cout << "E - using second portal " << char(15) << endl;
-	cout << "P - exit the game while on the level\n";
-
-	cout << endl << endl;
-
-	cout << "press Enter to go back to main menu" << endl;
-
-	while (_kbhit && back != 13)
-	{
-		back = _getch();
-	}
-
-	system("cls");
-}
-
-void Print_Player(int x, int y, int pl_coord, int cell)
-{
-	//Функция выводит местоположение игрока
-
-	HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
-	COORD c = { x, y };
-
-	SetConsoleCursorPosition(h, c);	//Курсор помещается на координаты, где игрок
-	cout << char(2);
-
-	//Затирание места, где был ранее игрок
-	switch (pl_coord)
-	{
-		case 1:
-		{
-			c.X++;
-			break;
-		}
-		case 2:
-		{
-			c.X--;
-			break;
-		}
-		case 3:
-		{
-			c.Y++;
-			break;
-		}
-		case 4:
-		{
-			c.Y--;
-			break;
-		}
-	}
-
-	SetConsoleCursorPosition(h, c);
-
-	//Проверка на наличие портала в месте, где был игрок
-	if (cell < 2)
-		cout << ' ';
-	else if (cell == 2)
-		cout << char(253);	//Телепорт вверх
-	else
-		cout << char(15);	//Телепорт вниз
-
-	//Курсор перемещается для удобной игры
-	c.X = matr_size;
-	if (y < matr_size / 4)
-		c.Y = matr_size / 4;
-	else if (y < matr_size / 2)
-		c.Y = matr_size / 2;
-	else if (y < matr_size * 3 / 4)
-		c.Y = matr_size * 3 / 4;
-	else
-		c.Y = matr_size;
-	SetConsoleCursorPosition(h, c);
+	cout << "level " << currentLvl + 1 << endl;
 }

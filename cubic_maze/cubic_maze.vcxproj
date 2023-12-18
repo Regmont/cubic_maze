@@ -130,6 +130,7 @@
     <ClCompile Include="cubic_maze.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ConsolePrint.h" />
     <ClInclude Include="maze_gen.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
